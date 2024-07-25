@@ -37,7 +37,7 @@ services:
     restart: always
     depends_on:
       - node_exporter
-      - traefik
+      - traefik # Ensure traefik starts before prometheus
     networks:
       - traefik
 
