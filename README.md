@@ -3,6 +3,8 @@
 This repository contains the configuration for my home lab. It's running under Proxmox VE 8.2.4
 It's also a way for me to document my setup and be able to recreate it if needed, with all the helpfull commands and ressources (doc, videos) I used.
 
+![HomeLab](res/homelab.jpg)
+
 ## Schema
 
 ![HomeLab Schema](res/HomeLab.drawio.png)
