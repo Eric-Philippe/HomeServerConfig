@@ -1,0 +1,32 @@
+version: "3.3"
+
+services:
+  wp-asireadandwrite:
+    image: wordpress:latest
+    container_name: wp-asireadandwrite
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: wp-db-asireadandwrite
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - 4001:80
+    volumes:
+      - wp-asireadandwrite:/var/www/html
+
+  wp-db-asireadandwrite:
+    image: mysql:5.7
+    container_name: wp-db-asireadandwrite
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - wp-db-asireadandwrite:/var/lib/mysql
+
+volumes:
+  wp-asireadandwrite:
+  wp-db-asireadandwrite:
