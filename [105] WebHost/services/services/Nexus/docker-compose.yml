@@ -1,0 +1,11 @@
+version: "3"
+services:
+  nexus:
+    image: sonatype/nexus3
+    restart: always
+    volumes:
+      - "nexus-data:/sonatype-work"
+    ports:
+      - "6001:8081"
+volumes:
+  nexus-data: {}
