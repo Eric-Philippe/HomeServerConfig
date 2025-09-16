@@ -32,6 +32,11 @@ services:
     restart: unless-stopped
     volumes:
       - ./config/pve/pve.yml:/etc/prometheus/pve.yml
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   tapo:
     image: povilasid/p110-exporter
@@ -49,3 +54,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
