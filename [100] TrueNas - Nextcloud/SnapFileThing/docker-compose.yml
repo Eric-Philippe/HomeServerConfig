@@ -1,0 +1,71 @@
+services:
+  snapfilething:
+    environment:
+      ADMIN_PASSWORD: "ADMIN_PASSWORD"
+      ADMIN_USERNAME: ADMIN_USERNAME
+      AUTH_DISABLED_ROUTES: >-
+        /,/web,/web/,/web/*,/favicon.ico,/api/health,/docs/*,/api-docs/*,/api/auth/login,/api/auth/refresh
+      AUTH_MODE: protected
+      BASE_URL: BASE_URL
+      JWT_SECRET: JWT_SECRET
+      MAX_FILE_SIZE: 104857600000
+      NVIDIA_VISIBLE_DEVICES: void
+      QOI_ENABLED: False
+      STATIC_PORT: "STATIC_PORT"
+      TZ: Europe/Paris
+      UPLOAD_DIR: "UPLOAD_DIR"
+      WEB_PORT: "WEB_PORT"
+    group_add:
+      - 568
+    hostname: snapfilething
+    image: ghcr.io/eric-philippe/snapfilething:latest-amd64
+    platform: linux/amd64
+    ports:
+      - mode: ingress
+        protocol: tcp
+        published: 7001
+        target: 7001
+      - mode: ingress
+        protocol: tcp
+        published: 7002
+        target: 7002
+    privileged: False
+    pull_policy: missing
+    restart: unless-stopped
+    stdin_open: False
+    tty: False
+    volumes:
+      - bind:
+          create_host_path: False
+          propagation: rprivate
+        read_only: False
+        source: /mnt/.ix-apps/app_mounts/snapfilething/snapfilething
+        target: /app/uploads
+        type: bind
+volumes: {}
+x-notes: >+
+  # iX App
+
+
+  ## Security
+
+
+  ### Container: [snapfilething]
+
+
+  - Is running as unknown user
+
+  - Is running as unknown group
+
+  - Is running without [no-new-privileges] security option
+
+
+  ## Bug Reports and Feature Requests
+
+
+  If you find a bug in this app or have an idea for a new feature, please file
+  an issue at
+
+  https://github.com/truenas/apps
+
+x-portals: []
