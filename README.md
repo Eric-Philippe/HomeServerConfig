@@ -9,6 +9,8 @@ It's also a way for me to document my setup and be able to recreate it if needed
 
 ![HomeLab Schema](res/HomeLab.drawio.png)
 
+> Last update: October 2025
+
 ## Server Configuration
 
 - **Server**: Lenovo ThinkStation P700
