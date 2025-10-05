@@ -1,0 +1,8 @@
+casaos.lan	192.168.1.145	
+jellyfin.lan	192.168.1.144	
+monitoring.lan	192.168.1.142	
+snapfilething.lan	192.168.1.141	
+traefik.monitoring.local	192.168.1.142	
+traefik.webhost.local	192.168.1.146	
+truenas.lan	192.168.1.141	
+webhost.lan	192.168.1.146

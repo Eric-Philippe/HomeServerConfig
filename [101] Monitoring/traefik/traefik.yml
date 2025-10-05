@@ -1,0 +1,30 @@
+api:
+  dashboard: true
+  insecure: false
+
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: ""
+        domains: []
+
+providers:
+  docker:
+    exposedByDefault: false
+    watch: true # Continuously watch for Docker events (default: true)
+    endpoint: "unix:///var/run/docker.sock" # Explicit socket path
+    network: "proxy" # Default network to use for container discovery
+
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/internal.crt
+        keyFile: /certs/internal.key
+  certificates:
+    - certFile: /certs/internal.crt
+      keyFile: /certs/internal.key

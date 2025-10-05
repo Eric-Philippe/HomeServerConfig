@@ -14,15 +14,23 @@ services:
     volumes:
       - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus-data:/prometheus
+    networks:
+      - proxy
 
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
-    ports:
-      - "80:3000"
     restart: unless-stopped
     volumes:
       - grafana-data:/var/lib/grafana
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.monitoring.homeserver-ericp.fr`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
 
   pve-exporter:
     image: prompve/prometheus-pve-exporter
@@ -32,6 +40,8 @@ services:
     restart: unless-stopped
     volumes:
       - ./config/pve/pve.yml:/etc/prometheus/pve.yml
+    networks:
+      - proxy
     logging:
       driver: "json-file"
       options:
@@ -54,8 +64,35 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    networks:
+      - proxy
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/traefik.yml:ro
+      - ./certs:/certs:ro
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.monitoring.local`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      - "traefik.http.routers.traefik.service=api@internal"
+
+networks:
+  proxy:
+    driver: bridge

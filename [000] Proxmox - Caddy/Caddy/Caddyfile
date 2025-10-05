@@ -1,0 +1,98 @@
+{
+	email ericphlpp@protonmail.com
+}
+
+# Global snippet for Traefik proxying
+(traefik_headers) {
+	header_up Host {host}
+	header_up X-Forwarded-Proto {scheme}
+	header_up X-Forwarded-Host {host}
+}
+
+# =========================================
+# Services directly fetched behind Caddy
+# =========================================
+
+nextcloud.storage.homeserver-ericp.fr {
+	tls ericphlpp@protonmail.com
+	reverse_proxy http://192.168.1.141:9001
+}
+
+snapfilething.homeserver-ericp.fr {
+	tls ericphlpp@protonmail.com
+	reverse_proxy http://192.168.1.141:7002
+}
+
+snapfilething.local {
+	tls ericphlpp@protonmail.com
+	reverse_proxy http://192.168.1.141:7001
+}
+
+# =========================================
+# All others domains → Traefik
+# =========================================
+
+asireadandwrite.com {
+	tls ericphlpp@protonmail.com
+	reverse_proxy https://192.168.1.146:443 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+		import traefik_headers
+	}
+}
+
+glitchandbooks.fr {
+	tls ericphlpp@protonmail.com
+	reverse_proxy https://192.168.1.146:443 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+		import traefik_headers
+	}
+}
+
+# =========================================
+# All wildcard subdomains → Traefik
+# =========================================
+
+*.monitoring.homeserver-ericp.fr {
+	tls {
+		dns ovh {
+			endpoint {env.OVH_ENDPOINT}
+			application_key {env.OVH_APPLICATION_KEY}
+			application_secret {env.OVH_APPLICATION_SECRET}
+			consumer_key {env.OVH_CONSUMER_KEY}
+		}
+	}
+
+	reverse_proxy https://192.168.1.142:443 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+		import traefik_headers
+	}
+}
+
+*.homeserver-ericp.fr {
+	tls {
+		dns ovh {
+			endpoint {env.OVH_ENDPOINT}
+			application_key {env.OVH_APPLICATION_KEY}
+			application_secret {env.OVH_APPLICATION_SECRET}
+			consumer_key {env.OVH_CONSUMER_KEY}
+		}
+	}
+
+	reverse_proxy https://192.168.1.146:443 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+		import traefik_headers
+	}
+}
+
+# Catch-all
+:80, :443 {
+	respond "Eric-HomeLab - Unknown domain" 404
+}
