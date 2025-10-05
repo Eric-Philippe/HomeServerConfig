@@ -1,0 +1,30 @@
+version: "3.3"
+
+services:
+  wp-thelasterdane:
+    image: wordpress:latest
+    container_name: wp-thelasterdane
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: wp-db-thelasterdane
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - wp-thelasterdane:/var/www/html
+
+  wp-db-thelasterdane:
+    image: mysql:5.7
+    container_name: wp-db-thelasterdane
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - wp-db-thelasterdane:/var/lib/mysql
+
+volumes:
+  wp-thelasterdane:
+  wp-db-thelasterdane:

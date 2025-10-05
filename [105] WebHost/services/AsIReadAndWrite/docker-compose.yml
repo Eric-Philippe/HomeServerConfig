@@ -1,0 +1,43 @@
+version: "3.3"
+
+services:
+  asireadandwrite-wp:
+    image: wordpress:latest
+    container_name: asireadandwrite-wp
+    restart: unless-stopped
+    environment:
+      WORDPRESS_DB_HOST: asireadandwrite-db
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - wp-asireadandwrite:/var/www/html
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"                                  
+      - "traefik.http.routers.asireadandwrite.rule=Host(`asireadandwrite.com`)"
+      - "traefik.http.routers.asireadandwrite.entrypoints=websecure"      
+      - "traefik.http.routers.asireadandwrite.tls=true"
+
+  asireadandwrite-db:
+    image: mysql:5.7
+    container_name: asireadandwrite-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - wp-db-asireadandwrite:/var/lib/mysql
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  wp-asireadandwrite:
+  wp-db-asireadandwrite:

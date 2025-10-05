@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  yboard-server:
+    image: ghcr.io/eric-philippe/yboard-intervenants:latest
+    container_name: yboard_server
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    volumes:
+      - cv_storage:/app/uploads/cv
+    networks:
+      - shared_backend
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.yboard.rule=Host(`yboard.homeserver-ericp.fr`)"
+      - "traefik.http.routers.yboard.entrypoints=websecure"
+      - "traefik.http.routers.yboard.tls=true"
+      
+volumes:
+  cv_storage:
+
+networks:
+  shared_backend:
+    external: true
+  proxy:
+    external: true

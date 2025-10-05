@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  ehub-server:
+    image: ghcr.io/eric-philippe/ehub-server:latest-amd64
+    container_name: ehub-server
+    restart: unless-stopped
+    environment:
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL}
+      - SPRING_DATASOURCE_USERNAME=${SPRING_DATASOURCE_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - TZ=Europe/Paris
+    volumes:
+      - ./resources:/app/external-resources
+    networks:
+      - shared_backend
+      - proxy
+    labels:
+      - "traefik.enable=true"                                  
+      - "traefik.http.routers.ehub.rule=Host(`ehub.homeserver-ericp.fr`)"
+      - "traefik.http.routers.ehub.entrypoints=websecure"      
+      - "traefik.http.routers.ehub.tls=true"
+      - "traefik.http.services.ehub.loadbalancer.server.port=8080"
+  
+networks:
+  shared_backend:
+    external: true
+  proxy:
+    external: true

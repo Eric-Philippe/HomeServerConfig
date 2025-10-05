@@ -1,0 +1,74 @@
+version: "3.8"
+
+services:
+  infra-portainer_agent:
+    image: portainer/agent:2.19.5
+    container_name: infra-portainer_agent
+    ports:
+      - "9001:9001"
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    networks:
+      - proxy
+
+  infra-traefik:
+    image: traefik:v3.1
+    container_name: infra-traefik
+    restart: always
+    ports:
+      - "80:80"        # HTTP 
+      - "443:443"      # HTTPS
+    command:
+      # Docker provider
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+
+      # Enable API and Dashboard
+      - "--api.dashboard=true"
+
+      # TLS / internal HTTPS
+      - "--serversTransport.insecureSkipVerify=true"
+      - "--configFile=/traefik.yml"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./opt/traefik/traefik.yml:/traefik.yml:ro
+      - ./certs:/certs:ro
+
+    networks:
+      - proxy
+
+    labels:
+      # Enable Traefik dashboard
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.webhost.local`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      - "traefik.http.routers.traefik.service=api@internal"
+
+  infra-postgres-db:
+    image: postgres:16
+    container_name: infra-postgres-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "54322:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - shared_backend
+
+volumes:
+  pg_data:
+
+networks:
+  proxy:
+    external: true
+  shared_backend:
+    name: shared_backend
+    driver: bridge

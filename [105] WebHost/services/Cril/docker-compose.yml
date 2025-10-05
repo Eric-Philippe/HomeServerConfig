@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  cril-bot:
+    image: ghcr.io/eric-philippe/cril-bot-main:latest
+    container_name: cril-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      TZ: Europe/Paris
+    depends_on:
+      - cril-db
+
+  cril-db:
+    image: postgres:16
+    container_name: cril-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # Easy access for debugging, uncomment if needed
+    # ports:
+    #   - "5432:5432"
+    volumes:
+      - postgres_data_discord:/var/lib/postgresql/data
+
+volumes:
+  postgres_data_discord:
