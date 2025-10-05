@@ -1,39 +1,119 @@
-# Conventions
+# WebHost services
 
-This machine will hold all the services in production, so a few conventions can be applied
+This directory contains the docker compose files for services hosted on the WebHost server.
 
-> No testing container should be put in this VM
+## Global services
 
-# Naming conventions:
+> Created the ``proxy`` network for Traefik and other services to use:
 
-Any service name will always be in lower-case
-Any service should start either with "wp-", "server-", "client-" or "bot-"
-If it's the main service then just the name of it should comes next
-Ex: bot-cril
-If it's a secondary service (Database ...) then just add a keyword (db-) then the name of the service
-Ex: bot-db-cril
+```bash
+$ docker network create proxy
+```
 
-# Directories
+| Service Name       | Description                                      |  Port  |
+|--------------------|--------------------------------------------------|--------|
+| Traefik             | Reverse proxy and load balancer                  | 80,443 |
+| Portainer          | Docker management node                           |  9000  |
 
-All the wordpress are in the `wordpress/` folder
-All the bots are in the `bots/` folder
-All the others services (Sonar, Nexus...) are in the `services/` folder
-Everything related to a homemade website are in the `server/` folder
+## Individual services
 
-> All the folder must respect the CamelCase naming convention
+### Directory structure
 
-# Ports conventions
+- Each service has its own subdirectory with a `docker-compose.yml` file.
 
-All the services are managed by a reverse proxy on the hypervisor, so we're kind of free about how we use the ports
-By convention:
+```
+services/
+├── Service1/
+│   └── docker-compose.yml
+├────── .env
+├────── folderMounts/
+```
 
-- Wordpress services: 4000 - 4999
-- Bots: 5000-5999
-- Services: 6000-6999
-- Websites Clients: 7000-7999
-- Websites Server and API: 8000 - 8999
-- Others: 9000-9999
+### Naming conventions
 
-Portainer agent is using the 9001
+- Each service's `docker-compose.yml` file should define a unique `container_name` for each container to avoid conflicts.
+- They should start with the service name as a prefix and the type of service as a suffix (e.g., `service1-web`, `service1-db`).
+- Try consistent naming conventions for types of services:
+- - Web servers (API/web interface): `-server`
+- - Databases: `-db`
+- - Caches: `-cache`
+- - Bot services: `-bot`
 
-At the end all the ports will be read from the hypervisor receiving only Https (443)
+
+### Network
+
+- No compose should expose ports to the host unless absolutely necessary. All opened services should be proxied through Traefik.
+- All services should be connected to the `proxy` network for Traefik to route traffic to them if needed.
+
+```yml
+services:
+  service1:
+    image: service1:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.service1.rule=Host(`service1.example.com`)"
+      - "traefik.http.routers.service1.entrypoints=websecure"
+      - "traefik.http.routers.service1.tls=true"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
+```
+
+### Credentials and environment variables
+
+- Compose shouldn't have credentials or sensitive information hardcoded. Use environment variables or Docker secrets instead.
+- Use a `.env` file in the service directory to store environment variables.
+
+```.env
+ENV_VAR1=value1
+```
+
+```yml
+services:
+  service1:
+    image: service1:latest
+    env_file:
+      - .env
+
+  services2:
+    image: service2:latest
+    environment:
+      - ENV_VAR1=${ENV_VAR1}
+```
+
+### Images management
+
+- Images best practices:
+  - All the images size should be as small as possible. Prefer Alpine-based images when available.
+  - Delete build tools and unnecessary packages in custom Dockerfiles.
+  - The WebHost shouldn't build images, we should only use pre-built images from GHCR, Docker Hub, or other registries.
+  - Should use the same image tag across services when possible to simplify updates and avoid duplicates (e.g., `postgres`...)
+
+#### List of common images
+
+| Service Type | Image               | Tag        |
+|--------------|---------------------|------------|
+| MySQL        | mysql               | 8.0        |
+| PostgreSQL   | postgres            | 16         |
+| Redis        | redis               | 8-alpine   |
+
+### Restart policy
+
+- All the services should specify the `restart` policy, to ensure they are restarted if they crash or the server reboots.
+
+### Common services
+
+A common service is a stack of services that can be shared between multiple services. For example, a common database or cache service for non-critical services.
+
+### Utils
+
+Rename volumes:
+
+```bash
+docker volume create --name new-volume-db-data && docker run --rm -it -v old-volume-db-data:/from -v new-volume-db-data:/to alpine ash -c 'cd /from ; cp -av . /to' && docker volume rm old-volume-db-data
+```
+
+Where `old_volume_name` is the old volume name and `new_volume_name` is the new volume name.
