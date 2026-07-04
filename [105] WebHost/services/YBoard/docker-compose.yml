@@ -15,10 +15,9 @@ services:
       - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.yboard.rule=Host(`yboard.homeserver-ericp.fr`)"
-      - "traefik.http.routers.yboard.entrypoints=websecure"
-      - "traefik.http.routers.yboard.tls=true"
-      
+      - "traefik.http.routers.yboard.rule=Host(`yboard.fr`)"
+      - "traefik.http.routers.yboard.entrypoints=web"
+      - "traefik.docker.network=proxy"
 volumes:
   cv_storage:
 

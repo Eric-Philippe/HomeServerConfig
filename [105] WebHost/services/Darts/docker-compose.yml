@@ -1,0 +1,33 @@
+name: darts
+services:
+  darts-server:
+    container_name: darts-server
+    image: ghcr.io/eric-philippe/dartscore:1.0.0
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      # Router HTTPS
+      - "traefik.http.routers.darts-api.rule=Host(`darts.homeserver-ericp.fr`)"
+      - "traefik.http.routers.darts-api.entrypoints=websecure"
+      - "traefik.http.routers.darts-api.tls=true"
+      # Redirection HTTP → HTTPS
+      - "traefik.http.routers.darts-api-http.rule=Host(`darts.homeserver-ericp.fr`)"
+      - "traefik.http.routers.darts-api-http.entrypoints=web"
+      - "traefik.http.routers.darts-api-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      # Service
+      - "traefik.http.services.darts-api.loadbalancer.server.port=80"
+    networks:
+      - darts-network
+      - proxy
+    volumes:
+      - darts_data:/app/data
+  
+volumes:
+  darts_data:
+
+networks:
+  darts-network:
+  proxy:
+    external: true

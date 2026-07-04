@@ -1,17 +1,50 @@
-version: "3.8"
-
+name: chronos-reminder
 services:
   chronos-server:
-    image: ghcr.io/eric-philippe/chronos-reminder:latest
     container_name: chronos-server
+    image: ghcr.io/eric-philippe/chronos-reminder:1.2.1
     restart: unless-stopped
     env_file:
       - .env
     environment:
       - TZ=UTC
+      - GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/google-service-account.json
+    volumes:
+      - ./google-service-account.json:/run/secrets/google-service-account.json:ro
     depends_on:
       - chronos-db
       - chronos-cache
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.chronos-api.rule=Host(`api.chronosrmd.com`)"
+      - "traefik.http.routers.chronos-api.entrypoints=web"
+      - "traefik.http.services.chronos-api.loadbalancer.server.port=8080"
+    networks:
+      - chronos-network
+      - proxy
+
+  chronos-web:
+    image: ghcr.io/eric-philippe/chronos-reminder/web:1.2.1
+    container_name: chronos-web
+    restart: unless-stopped
+    depends_on:
+      - chronos-server
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.chronos-web.rule=Host(`chronosrmd.com`)"
+      - "traefik.http.routers.chronos-web.entrypoints=web"
+      - "traefik.http.services.chronos-web.loadbalancer.server.port=3000"
+    networks:
+      - chronos-network
+      - proxy
 
   chronos-db:
     image: postgres:16
@@ -23,10 +56,12 @@ services:
       - POSTGRES_DB=${DB_NAME}
       - TZ=UTC
     # Easy access for debugging, uncomment if needed
-    # ports:
-    #   - "5432:5432"
+    ports:
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - chronos-network
 
   chronos-cache:
     image: redis:8-alpine
@@ -35,8 +70,34 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    networks:
+      - chronos-network
+
+  # Uptime Kuma
+  chronosuptime:
+    image: louislam/uptime-kuma:latest
+    container_name: chronos-uptime
+    volumes:
+      - uptime_kuma_data:/app/data
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.chronos-status.rule=Host(`status.chronosrmd.com`)"
+      - "traefik.http.routers.chronos-status.entrypoints=web"
+      - "traefik.http.services.chronos-status.loadbalancer.server.port=3001"
+    networks:
+      - chronos-network
+      - proxy
 
 volumes:
   postgres_data:
   redis_data:
+  uptime_kuma_data:
 
+networks:
+  chronos-network:
+  proxy:
+    external: true

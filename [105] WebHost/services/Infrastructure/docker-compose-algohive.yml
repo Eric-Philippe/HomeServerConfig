@@ -1,9 +1,9 @@
 version: "3.8"
 
 services:
-  infra-portainer_agent:
-    image: portainer/agent:2.39.4
-    container_name: infra-portainer_agent
+  portainer_agent:
+    image: portainer/agent:2.19.5
+    container_name: portainer_agent
     ports:
       - "9001:9001"
     restart: always
@@ -13,9 +13,9 @@ services:
     networks:
       - proxy
 
-  infra-traefik:
-    image: traefik:latest
-    container_name: infra-traefik
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik
     restart: always
     ports:
       - "80:80"        # HTTP 
@@ -43,54 +43,12 @@ services:
     labels:
       # Enable Traefik dashboard
       - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.webhost.local`)"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.algohive.local`)"
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.services.traefik.loadbalancer.server.port=8080"
       - "traefik.http.routers.traefik.service=api@internal"
 
-  infra-postgres-db:
-    image: postgres:16
-    container_name: infra-postgres-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "54322:5432"
-    volumes:
-      - pg_data:/var/lib/postgresql/data
-    networks:
-      - shared_backend
-
-  infra-cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
-    container_name: cadvisor
-    privileged: true
-    restart: unless-stopped
-
-    ports:
-      - "8080:8080"
-
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
-      - /dev/disk:/dev/disk:ro
-
-    devices:
-      - /dev/kmsg
-
-    command:
-      - "--docker_only=true"
-
-volumes:
-  pg_data:
-
 networks:
   proxy:
     external: true
-  shared_backend:
-    name: shared_backend
-    driver: bridge

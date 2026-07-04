@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    networks:
+      - proxy
+
+  server:
+    image: ghcr.io/eric-philippe/filaventory-server:latest
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: ${PORT:-8080}
+    labels:
+      - "traefik.enable=true"                                  
+      - "traefik.http.routers.filaventoryapi.rule=Host(`filaventoryapi.homeserver-ericp.fr`)"
+      - "traefik.http.routers.filaventoryapi.entrypoints=websecure"      
+      - "traefik.http.routers.filaventoryapi.tls=true"
+      - "traefik.http.services.filaventoryapi.loadbalancer.server.port=8080"
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - proxy
+
+volumes:
+  postgres_data:
+
+networks:
+  proxy:
+    external: true
